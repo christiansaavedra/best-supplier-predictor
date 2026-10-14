@@ -1,0 +1,9 @@
+**/node_modules
+**/.next
+**/dist
+.git
+.env
+*.md
+!README.md
+LOCAL.md
+PLANNING.md

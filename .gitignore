@@ -1,5 +1,8 @@
+LOCAL.md
+PLANNING.md
 .DS_Store
 node_modules
 .next
 dist
 .env
+.claude
