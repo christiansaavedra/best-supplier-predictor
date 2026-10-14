@@ -35,6 +35,7 @@ The tool is built around the analyst, whose manual comparison work it replaces. 
 | Learning the scoring weights with ML                                             | Not enough labelled data yet. Fixed, explainable weights first; v1 overrides become the training data.                                                               |
 | Supplier-facing portal                                                           | A different user and product. v1 is internal only.                                                                                                                   |
 | Supplier data upload UI                                                          | Data arrives through background syncs, not by hand (section 3).                                                                                                      |
+| Re-ranking a request when prices change                                          | The ranking is a snapshot of what the analyst saw (ADR 0012). Refreshing it adds questions (which snapshot was approved?) that v1 does not need.                     |
 
 ### Success metrics
 
@@ -233,6 +234,8 @@ Deterministic, per request line ([ADR 0013](adr/0013-weighted-score-with-hard-fi
 
 ```
 WEIGHTS = { price: 0.45, track: 0.30, lead: 0.15, risk: 0.10 }   # config
+PRICE_ZERO_AT = 0.30        # 30% above the cheapest scores 0 on price
+LEAD_ZERO_AT_DAYS = 10      # 10 days slower than the fastest scores 0 on lead time
 PRIOR_DELIVERIES = 5
 
 rank(line, request):
@@ -248,9 +251,12 @@ rank(line, request):
   if on_time is empty:
     return fastest 3 offers, flagged LATE
 
+  cheapest = min(o.total_usd for o in on_time)
+  fastest  = min(o.lead_time_days for o in on_time)
+
   for o in on_time:
-    price = normalize_inverse(o.total_usd, on_time)        # cheapest = 1, most expensive = 0
-    lead  = normalize_inverse(o.lead_time_days, on_time)   # fastest = 1
+    price = clamp01(1 - (o.total_usd - cheapest) / cheapest / PRICE_ZERO_AT)
+    lead  = clamp01(1 - (o.lead_time_days - fastest) / LEAD_ZERO_AT_DAYS)
     track = smoothed_on_time_rate(o.supplier, request.country)
     risk  = 1 - route_risk(o.supplier.country, request.country)   # ops-maintained table
     o.breakdown = { price, lead, track, risk }
@@ -258,10 +264,6 @@ rank(line, request):
     if days_since(o.updated_at) > 30: flag o as PRICE_MAY_BE_OUTDATED
 
   return top 3 by score
-
-normalize_inverse(x, set):
-  if max(set) == min(set): return 1
-  return (max(set) - x) / (max(set) - min(set))
 
 smoothed_on_time_rate(supplier, country):
   d = deliveries of supplier to country
@@ -278,6 +280,7 @@ smoothed_on_time_rate(supplier, country):
 
 **Details worth noting:**
 
+- **Price and lead time are scored against the best offer**, not the spread of all offers. A first version scaled cheapest = 1 / most expensive = 0, so with two offers a 5% price gap counted as the full price weight and an unreliable supplier beat a reliable one. A unit test caught it.
 - **Smoothing:** a new supplier with 1 of 1 deliveries on time doesn't get a perfect score. Their record is blended with the average as if they had 5 typical deliveries.
 - **Late fallback:** if no offer arrives in time, the analyst still sees the fastest options and can renegotiate the date.
 - **Price** is unit price × quantity in USD. Shipping and import duties are out of v1, partly covered by route risk.

@@ -2,10 +2,10 @@
 
 The deliverable is [`proposal.md`](proposal.md); ADRs are its appendix.
 
-| Folder             | What lives there                                                                                   | When it is written                                                                                       |
-| ------------------ | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| [`adr/`](adr/)     | Architecture Decision Records: one decision per file, with context, alternatives and consequences. | When a decision with trade-offs is made. Never edited after acceptance; superseded by a new ADR instead. |
-| [`specs/`](specs/) | Feature specs: what to build, acceptance criteria, what is out of scope.                           | Before building a feature. Updated if scope changes.                                                     |
+| Folder             | What lives there                                                                                   | When it is written                                                                |
+| ------------------ | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [`adr/`](adr/)     | Architecture Decision Records: one decision per file, with context, alternatives and consequences. | When a decision with trade-offs is made. Edited in place if the decision changes. |
+| [`specs/`](specs/) | Feature specs: what to build, acceptance criteria, what is out of scope.                           | Before building a feature. Updated if scope changes.                              |
 
 ## Flow
 
@@ -40,6 +40,6 @@ The deliverable is [`proposal.md`](proposal.md); ADRs are its appendix.
 | #                                                 | Title                       | Status |
 | ------------------------------------------------- | --------------------------- | ------ |
 | [0001](specs/0001-project-setup-and-seed-data.md) | Project setup and seed data | Draft  |
-| [0002](specs/0002-free-text-intake.md)            | Free-text intake            | Draft  |
-| [0003](specs/0003-ranking-and-explanation.md)     | Ranking and explanation     | Draft  |
-| [0004](specs/0004-selection-and-approval.md)      | Selection and approval      | Draft  |
+| [0002](specs/0002-free-text-intake.md)            | Free-text intake            | Built  |
+| [0003](specs/0003-ranking-and-explanation.md)     | Ranking and explanation     | Built  |
+| [0004](specs/0004-selection-and-approval.md)      | Selection and approval      | Built  |
