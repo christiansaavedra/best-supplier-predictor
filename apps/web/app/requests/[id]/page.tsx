@@ -51,7 +51,11 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
         <p className="text-muted-foreground">
           To {request.countryName} · need by {date(request.needBy)} · created by {request.createdByName}
         </p>
-        <blockquote className="border-l-2 pl-4 text-sm text-muted-foreground italic">{request.rawText}</blockquote>
+        {request.rawText ? (
+          <blockquote className="border-l-2 pl-4 text-sm text-muted-foreground italic">{request.rawText}</blockquote>
+        ) : (
+          <p className="text-sm text-muted-foreground italic">Entered by hand.</p>
+        )}
       </div>
 
       {lastRejection && (

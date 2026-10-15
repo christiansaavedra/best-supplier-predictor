@@ -16,7 +16,7 @@ import { createRequest, parseText } from "../actions";
 type Line = {
   key: number;
   description: string;
-  quantity: number;
+  quantity: number | null; // null while the field is empty during editing
   productId: number | null;
   matchStatus: MatchStatus;
   candidates: ProductOption[];
@@ -59,6 +59,7 @@ export function IntakeForm({ catalog }: { catalog: Catalog }) {
     setDraft((d) => d && { ...d, lines: d.lines.map((l) => (l.key === key ? { ...l, ...patch } : l)) });
 
   const problems = draft ? validate(draft) : [];
+  const productLabel = (id: number) => catalog.products.find((p) => p.id === id)?.label ?? "";
 
   const submit = () => {
     if (!draft || problems.length > 0) return;
@@ -70,8 +71,14 @@ export function IntakeForm({ catalog }: { catalog: Catalog }) {
         needBy: draft.needBy,
         lines: draft.lines.map((l) =>
           l.productId === null
-            ? { matchStatus: "not_found", description: l.description, quantity: l.quantity, productId: null }
-            : { matchStatus: "matched", description: l.description, quantity: l.quantity, productId: l.productId },
+            ? { matchStatus: "not_found", description: l.description.trim(), quantity: l.quantity!, productId: null }
+            : {
+                matchStatus: "matched",
+                // Filled in by hand: the product name stands in for an empty description.
+                description: l.description.trim() || productLabel(l.productId),
+                quantity: l.quantity!,
+                productId: l.productId,
+              },
         ),
       });
       if (!result.ok) setError(result.error);
@@ -155,6 +162,7 @@ export function IntakeForm({ catalog }: { catalog: Catalog }) {
                 <Input
                   id="need-by"
                   type="date"
+                  min={todayIso()}
                   value={draft.needBy}
                   onChange={(e) => setDraft({ ...draft, needBy: e.target.value })}
                 />
@@ -195,8 +203,10 @@ export function IntakeForm({ catalog }: { catalog: Catalog }) {
                           aria-label="Quantity"
                           type="number"
                           min={1}
-                          value={line.quantity}
-                          onChange={(e) => updateLine(line.key, { quantity: Math.max(1, Number(e.target.value) || 1) })}
+                          value={line.quantity ?? ""}
+                          onChange={(e) =>
+                            updateLine(line.key, { quantity: e.target.value === "" ? null : Number(e.target.value) })
+                          }
                         />
                       </TableCell>
                       <TableCell>
@@ -262,12 +272,23 @@ export function IntakeForm({ catalog }: { catalog: Catalog }) {
   );
 }
 
+// Local date as YYYY-MM-DD (toISOString would use UTC and can be a day off).
+function todayIso() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function validate(draft: Draft): string[] {
   const problems: string[] = [];
   if (!draft.countryCode) problems.push("Choose a country");
   if (!draft.needBy) problems.push("Set a need-by date");
+  else if (draft.needBy < todayIso()) problems.push("The need-by date can't be in the past");
   if (draft.lines.length === 0) problems.push("Add at least one line");
+  if (draft.lines.some((l) => l.quantity === null || !Number.isInteger(l.quantity) || l.quantity < 1))
+    problems.push("Set a whole quantity of at least 1 for every line");
   if (draft.lines.some((l) => l.matchStatus === "ambiguous")) problems.push("Pick a product for every line");
+  if (draft.lines.some((l) => l.matchStatus === "not_found" && l.description.trim() === ""))
+    problems.push("Describe each product that is not in the catalog");
   if (!draft.lines.some((l) => l.matchStatus === "matched") && draft.lines.length > 0)
     problems.push("At least one line must be in the catalog");
   return problems;

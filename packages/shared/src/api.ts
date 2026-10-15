@@ -29,7 +29,7 @@ export type ParseResult = z.infer<typeof ParseResult>;
 // POST /requests
 
 export const CreateRequestBody = z.object({
-  rawText: z.string().trim().min(1),
+  rawText: z.string().trim(), // empty when the analyst filled the form in by hand
   countryCode: z.string().length(2),
   needBy: z.iso.date(),
   lines: z
@@ -43,7 +43,7 @@ export const CreateRequestBody = z.object({
         }),
         z.object({
           matchStatus: z.literal("not_found"),
-          description: z.string(),
+          description: z.string().trim().min(1, "Describe each product that is not in the catalog"),
           quantity: z.number().int().positive(),
           productId: z.null(),
         }),

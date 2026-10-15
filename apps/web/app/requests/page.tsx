@@ -55,7 +55,7 @@ export default async function RequestsPage() {
                           href={`/requests/${r.id}`}
                           className="block truncate text-muted-foreground hover:text-foreground"
                         >
-                          {r.rawText}
+                          {r.rawText || <span className="italic">Entered by hand</span>}
                         </Link>
                         <span className="text-xs text-muted-foreground">
                           {r.lineCount} {r.lineCount === 1 ? "line" : "lines"}

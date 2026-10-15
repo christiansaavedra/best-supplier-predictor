@@ -23,6 +23,9 @@ requestsRouter.post("/requests/parse", requireRole("analyst", "manager"), async 
 requestsRouter.post("/requests", requireRole("analyst", "manager"), async (req, res) => {
   const body = CreateRequestBody.parse(req.body);
 
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  if (body.needBy < yesterday) throw new HttpError(400, "The need-by date can't be in the past");
+
   const productIds = body.lines.flatMap((l) => (l.productId === null ? [] : [l.productId]));
   if (productIds.length > 0) {
     const found = await db.select({ id: products.id }).from(products).where(inArray(products.id, productIds));
