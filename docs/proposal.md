@@ -178,7 +178,7 @@ All on GCP ([ADR 0010](adr/0010-gcp-cloud-run-terraform-github-actions.md)).
 - **CI/CD (GitHub Actions):**
 
 ```mermaid
-flowchart LR
+flowchart TD
     PR[Pull request] --> C[Lint, type check, tests]
     C --> M[Merge to main]
     M --> B[Build image]
